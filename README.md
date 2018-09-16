@@ -51,6 +51,8 @@ ckanext-upload_via_email should be availabe on PyPI as https://pypi.python.org/p
 
 ## Developing the pipelines
 
+The pipelines are defined in [pipelines/pipeline-spec.yaml](pipelines/pipeline-spec.yaml) using the [datapackage-pipelines](https://github.com/frictionlessdata/datapackage-pipelines) framework. All `.py` files under the `pipelines` directory run on the CKAN pipelines server which uses Python 3.6.
+
 * Start the CKAN server
 * Start a Python 3.6 virtualenv
   * `pipenv shell`
