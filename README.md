@@ -18,7 +18,7 @@ Minimal supported CKAN version: 2.8.1
 * Generate a Gmail API credentials file
   * See [here](https://developers.google.com/gmail/api/quickstart/python)
 * Generate a Gmail API token file, authorize with the Gmail user which will receive the emails
-  * `sudo pip3 install -r pipelines/requirements.txt`
+  * `sudo pip3 install -r ckanext/pipelines/requirements.txt`
   * `CREDENTIALS=/path/to/credentials_file bin/generate_ckan_config.py`
 * Add the output config to your CKAN configuration (be sure to keep it secret)
 * Add the following configurations as well:
@@ -51,7 +51,7 @@ ckanext-upload_via_email should be availabe on PyPI as https://pypi.python.org/p
 
 ## Developing the pipelines
 
-The pipelines are defined in [pipelines/pipeline-spec.yaml](pipelines/pipeline-spec.yaml) using the [datapackage-pipelines](https://github.com/frictionlessdata/datapackage-pipelines) framework. All `.py` files under the `pipelines` directory run on the CKAN pipelines server which uses Python 3.6.
+The pipelines are defined in [ckanext/pipelines/pipeline-spec.yaml](ckanext/pipelines/pipeline-spec.yaml) using the [datapackage-pipelines](https://github.com/frictionlessdata/datapackage-pipelines) framework. All `.py` files under the `ckanext/pipelines` directory run on the CKAN pipelines server which uses Python 3.6.
 
 * Start the CKAN server
 * Start a Python 3.6 virtualenv
@@ -60,7 +60,7 @@ The pipelines are defined in [pipelines/pipeline-spec.yaml](pipelines/pipeline-s
   * `pip install -Ur ../ckanext-datapackage_pipelines/datapackage_pipelines_ckanext/requirements.txt`
   * `pip install -e ../ckanext-datapackage_pipelines/datapackage_pipelines_ckanext`
 * Install the upload via email requirements
-  * `pip install -r pipelines/requirements.txt`
+  * `pip install -r ckanext/pipelines/requirements.txt`
 * Change to the pipelines directory and run dpp
-  * `cd pipelines`
+  * `cd ckanext/pipelines`
   * `dpp`

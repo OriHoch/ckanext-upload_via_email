@@ -14,7 +14,7 @@ class Upload_Via_EmailPlugin(plugins.SingletonPlugin):
         toolkit.add_resource('fanstatic', 'upload_via_email')
 
     def register_pipelines(self):
-        return 'ckanext-upload_via_email', os.path.join(os.path.dirname(__file__), '..', '..', 'pipelines')
+        return 'ckanext-upload_via_email', os.path.join(os.path.dirname(__file__), '..', 'pipelines')
 
     def get_pipelines_config(self):
         return {'gmail_token': toolkit.config.get('ckanext.upload_via_email.gmail_token'),
