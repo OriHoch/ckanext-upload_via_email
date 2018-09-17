@@ -10,7 +10,8 @@ from httplib2 import Http
 from email.mime.text import MIMEText
 from os import environ
 import base64
-from collections import defaultdict
+from collections import defaultdict, deque
+from utils import temp_loglevel
 
 
 def flow(parameters, datapackage, resources, source_stats):
@@ -21,6 +22,7 @@ def flow(parameters, datapackage, resources, source_stats):
     service = build('gmail', 'v1', http=credentials.authorize(Http()), cache_discovery=False)
 
     def get_ckan_log(datasets_messages, ckan_log_resource):
+        last_created_datasets = deque(maxlen=10)
         stats = defaultdict(int)
         ckan_log_path = path.join(data_path, 'ckan_log', 'datapackage.json')
         if path.exists(ckan_log_path):
@@ -38,16 +40,19 @@ def flow(parameters, datapackage, resources, source_stats):
                 from_email = [header['value'] for header in message['payload']['headers'] if header['name'] == 'From'][0]
                 row['from_email'] = from_email
                 dataset_url = '{}/dataset/{}'.format(environ['CKAN_URL'], row['dataset_name'])
+                last_created_datasets.append(dataset_url)
                 message = MIMEText(config['success_message'].format(dataset_url=dataset_url))
                 message['to'] = from_email
                 message['from'] = config['success_message_from_email']
                 message['subject'] = config['success_message_subject']
                 message = {'raw': base64.urlsafe_b64encode(message.as_string().encode()).decode('utf-8')}
-                service.users().messages().send(userId='me', body=message).execute()
-                stats['successful_messages'] += 1
+                with temp_loglevel():
+                    service.users().messages().send(userId='me', body=message).execute()
+                stats['update_created_datasets: sent emails'] += 1
             yield row
         shutil.rmtree(path.join(data_path, 'attachments'), ignore_errors=True)
         source_stats.update(**stats)
+        source_stats['last created datasets'] = list(last_created_datasets)
 
     def update_created_datasets(package: PackageWrapper):
         for descriptor in datapackage['resources']:

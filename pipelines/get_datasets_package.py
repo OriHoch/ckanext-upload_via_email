@@ -49,9 +49,9 @@ class DatasetsPackageDataStreamProcessor(DataStreamProcessor):
                                                                 'owner_org': org_id,
                                                                 'title': row['subject']}})
                 output_resources += dataset_resources
-                stats['valid messages'] += 1
+                stats['get_datasets: messages with valid resources'] += 1
             else:
-                stats['invalid messages'] += 1
+                stats['get_datasets: messages without valid resources'] += 1
             self.source_stats.update(**stats)
         return messages_datasets, output_resources
 

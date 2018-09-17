@@ -1,5 +1,4 @@
 from dataflows import Flow, load, PackageWrapper, add_metadata
-from datapackage import Package
 from datapackage_pipelines_ckanext import helpers as ckanext_helpers
 from oauth2client.client import OAuth2Credentials
 from googleapiclient.discovery import build
@@ -9,6 +8,7 @@ from os import makedirs
 import json
 from base64 import urlsafe_b64decode
 from collections import defaultdict
+from utils import temp_loglevel
 
 
 def get_allowed_senders(resource):
@@ -31,7 +31,6 @@ def get_sender_organization_id(from_email, to_email, allowed_senders):
                 return row['organization_id']
     return None
 
-
 def get_messages(source_stats, allowed_senders):
     stats = defaultdict(int)
     config = ckanext_helpers.get_plugin_configuration('upload_via_email')
@@ -39,11 +38,13 @@ def get_messages(source_stats, allowed_senders):
     data_path = config['data_path']
     assert credentials and not credentials.invalid
     attachments_path = path.join(data_path, 'attachments')
-    service = build('gmail', 'v1', http=credentials.authorize(Http()), cache_discovery=False)
-    results = service.users().messages().list(userId='me', labelIds=['UNREAD']).execute()
+    with temp_loglevel():
+        service = build('gmail', 'v1', http=credentials.authorize(Http()), cache_discovery=False)
+        results = service.users().messages().list(userId='me', labelIds=['UNREAD']).execute()
     for message in results.get('messages', []):
         message_id = message['id']
-        service.users().messages().modify(id=message_id, userId='me', body={'removeLabelIds': ['UNREAD']}).execute()
+        with temp_loglevel():
+            service.users().messages().modify(id=message_id, userId='me', body={'removeLabelIds': ['UNREAD']}).execute()
         message = service.users().messages().get(userId='me', id=message_id, format='full').execute()
         headers = {header['name']: header['value']
                    for header in message.get('payload', {}).get('headers', [])
@@ -58,8 +59,9 @@ def get_messages(source_stats, allowed_senders):
                 with open(path.join(attachments_path, message_id, 'part{}.body'.format(part_id)), 'wb') as f:
                     body = part.get('body', {})
                     if 'attachmentId' in body:
-                        attachment = service.users().messages().attachments().get(userId='me', messageId=message_id,
-                                                                                  id=body['attachmentId']).execute()
+                        with temp_loglevel():
+                            attachment = service.users().messages().attachments().get(userId='me', messageId=message_id,
+                                                                                      id=body['attachmentId']).execute()
                         data = attachment['data']
                     else:
                         data = body.pop('data', '')
@@ -76,9 +78,9 @@ def get_messages(source_stats, allowed_senders):
                    'organization_id': organization_id}
             with open(path.join(attachments_path, message_id, 'message.json'), 'w') as f:
                 json.dump(message, f, indent=2)
-            stats['downloaded_messages'] += 1
+            stats['downloaded_messages: downloaded'] += 1
         else:
-            stats['unauthorized_messages'] += 1
+            stats['download_messages: unauthorized'] += 1
     source_stats.update(**stats)
 
 
