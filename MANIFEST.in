@@ -3,4 +3,4 @@ include LICENSE
 include requirements.txt
 include VERSION.txt
 recursive-include ckanext/upload_via_email *.html *.json *.js *.less *.css *.mo *.gif resource.config
-recursive-include ckanext/pipelines *.yaml *.py *.txt
+recursive-include ckanext/upload_via_email/pipelines *.yaml *.py *.txt
