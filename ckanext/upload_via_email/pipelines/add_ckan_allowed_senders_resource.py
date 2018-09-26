@@ -1,3 +1,4 @@
+from datapackage_pipelines.wrapper import ingest, spew
 from datapackage_pipelines_ckan.processors.add_ckan_resource import AddCkanResource
 from datapackage_pipelines_ckanext import helpers as ckanext_helpers
 from functools import lru_cache
@@ -20,6 +21,15 @@ class AddCkanAllowedSendersResource(AddCkanResource):
         resource.update(http_headers={'Authorization': environ['CKAN_API_KEY']},
                         name='allowed-senders', path='allowed-senders.csv')
 
+    def __call__(self, *args, **kwargs):
+        parameters, datapackage, res_iter = ingest()
+        self.get_parameters(parameters)
+        if parameters.get('resource-id'):
+            resource_show_url = self.get_resource_show_url()
+            resource = self.get_ckan_resource(resource_show_url)
+            self.update_ckan_resource(resource)
+            datapackage['resources'].append(resource)
+        spew(datapackage, res_iter)
 
 if __name__ == '__main__':
     AddCkanAllowedSendersResource()()

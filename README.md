@@ -24,6 +24,8 @@ Minimal supported CKAN version: 2.8.1
 * Add the following configurations as well:
 ```
 ckanext.upload_via_email.allowed_senders_resource_id = ckan_resource_id_containing_allowed_senders_file
+ckanext.upload_via_email.default_sender_to_address = email address which accepts emails not in the allowed senders file
+ckanext.upload_via_email.default_sender_organization_id = organization_id for emails not in the allowed senders file
 ckanext.upload_via_email.success_message = The dataset is available at {dataset_url}
 ckanext.upload_via_email.success_message_from_email = do-not-reply@void.void
 ckanext.upload_via_email.success_message_subject = Your dataset was created successfully

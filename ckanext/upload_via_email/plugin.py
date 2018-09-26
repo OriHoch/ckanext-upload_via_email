@@ -19,6 +19,8 @@ class Upload_Via_EmailPlugin(plugins.SingletonPlugin):
     def get_pipelines_config(self):
         return {'gmail_token': toolkit.config.get('ckanext.upload_via_email.gmail_token'),
                 'allowed_senders_resource_id': toolkit.config.get('ckanext.upload_via_email.allowed_senders_resource_id'),
+                'default_sender_to_address': toolkit.config.get('ckanext.upload_via_email.default_sender_to_address'),
+                'default_sender_organization_id': toolkit.config.get('ckanext.upload_via_email.default_sender_organization_id'),
                 'success_message': toolkit.config.get('ckanext.upload_via_email.success_message'),
                 'success_message_from_email': toolkit.config.get('ckanext.upload_via_email.success_message_from_email'),
                 'success_message_subject': toolkit.config.get('ckanext.upload_via_email.success_message_subject'),}

@@ -22,14 +22,21 @@ def is_email_match(a, b):
     return '<{}>'.format(a) in b or '<{}>'.format(b) in a or a == b
 
 
-def get_sender_organization_id(from_email, to_email, allowed_senders):
+def get_sender_organization_id(from_email, to_email, allowed_senders, config):
     if from_email and to_email:
         from_email = from_email.lower().strip()
         to_email = to_email.lower().strip()
         for row in allowed_senders:
             if is_email_match(from_email, row['from_address']) and is_email_match(to_email, row['to_address']):
                 return row['organization_id']
+        default_sender_to_address = config.get('default_sender_to_address')
+        default_sender_organization_id = config.get('default_sender_organization_id')
+        if default_sender_to_address and default_sender_organization_id:
+            default_sender_to_address = default_sender_to_address.lower().strip()
+            if is_email_match(from_email, default_sender_to_address):
+                return default_sender_organization_id
     return None
+
 
 def get_messages(source_stats, allowed_senders):
     stats = defaultdict(int)
@@ -49,7 +56,7 @@ def get_messages(source_stats, allowed_senders):
         headers = {header['name']: header['value']
                    for header in message.get('payload', {}).get('headers', [])
                    if header.get('name') and header.get('value')}
-        organization_id = get_sender_organization_id(headers.get('From'), headers.get('To'), allowed_senders)
+        organization_id = get_sender_organization_id(headers.get('From'), headers.get('To'), allowed_senders, config)
         if organization_id:
             makedirs(path.join(attachments_path, message_id), exist_ok=True)
             part_ids = []
@@ -87,7 +94,8 @@ def get_messages(source_stats, allowed_senders):
 def flow(parameters, datapackage, resources, source_stats):
 
     def download_messages(package: PackageWrapper):
-        package.pkg.remove_resource('allowed-senders')
+        if 'allowed-senders' in package.pkg.resource_names:
+            package.pkg.remove_resource('allowed-senders')
         package.pkg.add_resource({'dpp:streaming': True,
                                   'name': 'messages',
                                   'path': 'messages.csv',
