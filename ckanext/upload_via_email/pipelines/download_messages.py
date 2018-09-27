@@ -33,7 +33,7 @@ def get_sender_organization_id(from_email, to_email, allowed_senders, config):
         default_sender_organization_id = config.get('default_sender_organization_id')
         if default_sender_to_address and default_sender_organization_id:
             default_sender_to_address = default_sender_to_address.lower().strip()
-            if is_email_match(from_email, default_sender_to_address):
+            if is_email_match(to_email, default_sender_to_address):
                 return default_sender_organization_id
     return None
 
