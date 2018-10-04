@@ -24,7 +24,7 @@ class AddCkanAllowedSendersResource(AddCkanResource):
     def __call__(self, *args, **kwargs):
         parameters, datapackage, res_iter = ingest()
         self.get_parameters(parameters)
-        if parameters.get('resource-id'):
+        if self.resource_id:
             resource_show_url = self.get_resource_show_url()
             resource = self.get_ckan_resource(resource_show_url)
             self.update_ckan_resource(resource)
