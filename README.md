@@ -40,17 +40,6 @@ The resource should contain an xlsx file with the following columns:
 * **to_address**: email address sender is allowed to send to
 * **organization_id**: id of sender's organization
 
-## Updating the package on PYPI
-
-Update the version in `VERSION.txt`, then build and upload:
-
-```
-python setup.py sdist &&\
-twine upload dist/ckanext-upload_via_email-$(cat VERSION.txt).tar.gz
-```
-
-ckanext-upload_via_email should be availabe on PyPI as https://pypi.python.org/pypi/ckanext-upload_via_email.
-
 ## Developing the pipelines
 
 The pipelines are defined in [ckanext/upload_via_email/pipelines/pipeline-spec.yaml](ckanext/upload_via_email/pipelines/pipeline-spec.yaml) using the [datapackage-pipelines](https://github.com/frictionlessdata/datapackage-pipelines) framework. All `.py` files under the `ckanext/upload_via_email/pipelines` directory run on the CKAN pipelines server which uses Python 3.6.
