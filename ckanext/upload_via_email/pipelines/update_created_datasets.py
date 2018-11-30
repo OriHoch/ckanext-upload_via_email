@@ -12,6 +12,33 @@ from os import environ
 import base64
 from collections import defaultdict, deque
 from utils import temp_loglevel
+import logging
+import re
+
+
+def send_success_message(data_path, message_id, dataset_name, config, service, stats, override_to=None):
+    with open(path.join(data_path, 'attachments', message_id, 'message.json')) as f:
+        source_message = json.load(f)
+    dataset_url = '{}/dataset/{}'.format(environ['CKAN_URL'], dataset_name)
+    message = MIMEText(config['success_message'].format(dataset_url=dataset_url))
+    source_message_from_headers = [header for header in source_message['payload']['headers'] if header['name'] == 'From']
+    logging.info(f'source message from headers: {source_message_from_headers}')
+    from_email = [header['value'] for header in source_message['payload']['headers'] if header['name'] == 'From'][0]
+    if override_to:
+        message['to'] = override_to
+    else:
+        try:
+            message['to'] = re.findall('<(.*)>', from_email)[0]
+        except Exception:
+            message['to'] = from_email
+    logging.info(f'sending success message to: {message["to"]}')
+    message['from'] = config['success_message_from_email']
+    message['subject'] = config['success_message_subject']
+    message = {'raw': base64.urlsafe_b64encode(message.as_string().encode()).decode('utf-8')}
+    with temp_loglevel():
+        service.users().messages().send(userId='me', body=message).execute()
+    stats['update_created_datasets: sent emails'] += 1
+    return dataset_url, from_email
 
 
 def flow(parameters, datapackage, resources, source_stats):
@@ -35,20 +62,16 @@ def flow(parameters, datapackage, resources, source_stats):
             row['message_id'] = message_id
             if not row['error'] and message_id not in successful_message_ids:
                 successful_message_ids.add(message_id)
-                with open(path.join(data_path, 'attachments', message_id, 'message.json')) as f:
-                    message = json.load(f)
-                from_email = [header['value'] for header in message['payload']['headers'] if header['name'] == 'From'][0]
-                row['from_email'] = from_email
-                dataset_url = '{}/dataset/{}'.format(environ['CKAN_URL'], row['dataset_name'])
+                try:
+                    dataset_url, from_email = send_success_message(data_path, message_id, row['dataset_name'], config, service, stats)
+                except Exception:
+                    if not config.get('success_message_default_to_email'):
+                        raise
+                    else:
+                        logging.exception(f"failed to send to from email, trying default sender: {config['success_message_default_to_email']}")
+                        dataset_url, from_email = send_success_message(data_path, message_id, row['dataset_name'],
+                                                                       config, service, stats, config['success_message_default_to_email'])
                 last_created_datasets.append(dataset_url)
-                message = MIMEText(config['success_message'].format(dataset_url=dataset_url))
-                message['to'] = from_email
-                message['from'] = config['success_message_from_email']
-                message['subject'] = config['success_message_subject']
-                message = {'raw': base64.urlsafe_b64encode(message.as_string().encode()).decode('utf-8')}
-                with temp_loglevel():
-                    service.users().messages().send(userId='me', body=message).execute()
-                stats['update_created_datasets: sent emails'] += 1
             yield row
         shutil.rmtree(path.join(data_path, 'attachments'), ignore_errors=True)
         source_stats.update(**stats)

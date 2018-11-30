@@ -29,6 +29,7 @@ ckanext.upload_via_email.default_sender_organization_id = organization_id for em
 ckanext.upload_via_email.success_message = The dataset is available at {dataset_url}
 ckanext.upload_via_email.success_message_from_email = do-not-reply@void.void
 ckanext.upload_via_email.success_message_subject = Your dataset was created successfully
+ckanext.upload_via_email.success_message_default_to_email = Default email address to send success message to in case of unexpected error
 ```
 
 ## Allowed senders file
