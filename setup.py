@@ -6,10 +6,6 @@ from time import time
 
 here = path.abspath(path.dirname(__file__))
 
-# Get the long description from the relevant file
-with open(path.join(here, 'README.md'), encoding='utf-8') as f:
-    long_description = f.read()
-
 if path.exists("VERSION.txt"):
     # this file can be written by CI tools (e.g. Travis)
     with open("VERSION.txt") as version_file:
@@ -26,7 +22,11 @@ setup(
     version=version,
 
     description='''Upload packages to CKAN via Email''',
-    long_description=long_description,
+    long_description="""Upload packages to CKAN via Email
+
+Minimal supported CKAN version: 2.8.1
+
+See https://github.com/OriHoch/ckanext-upload_via_email for documentation""",
 
     # The project's main homepage.
     url='https://github.com/OriHoch/ckanext-upload_via_email',

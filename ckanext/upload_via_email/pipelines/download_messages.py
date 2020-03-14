@@ -27,8 +27,11 @@ def get_sender_organization_id(from_email, to_email, allowed_senders, config):
         from_email = from_email.lower().strip()
         to_email = to_email.lower().strip()
         for row in allowed_senders:
-            if is_email_match(from_email, row['from_address']) and is_email_match(to_email, row['to_address']):
-                return row['organization_id']
+            if row['from_address'] and row['to_address']:
+                allowed_from_email = row['from_address'].encode('ascii', 'ignore').decode().lower().strip()
+                allowed_to_email = row['to_address'].encode('ascii', 'ignore').decode().lower().strip()
+                if is_email_match(from_email, allowed_from_email) and is_email_match(to_email, allowed_to_email):
+                    return row['organization_id']
         default_sender_to_address = config.get('default_sender_to_address')
         default_sender_organization_id = config.get('default_sender_organization_id')
         if default_sender_to_address and default_sender_organization_id:
