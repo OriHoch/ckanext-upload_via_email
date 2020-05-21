@@ -1,4 +1,4 @@
-from dataflows import Flow, load, PackageWrapper, add_metadata
+from dataflows import Flow, load, PackageWrapper, add_metadata, dump_to_path
 from datapackage_pipelines_ckanext import helpers as ckanext_helpers
 from oauth2client.client import OAuth2Credentials
 from googleapiclient.discovery import build
@@ -9,6 +9,7 @@ import json
 from base64 import urlsafe_b64decode
 from collections import defaultdict
 from utils import temp_loglevel
+import sys
 
 
 def get_allowed_senders(resource):
@@ -41,6 +42,23 @@ def get_sender_organization_id(from_email, to_email, allowed_senders, config):
     return None
 
 
+def process_parts(payload, all_part_ids, attachments_path, message_id, service):
+    for part in payload.get('parts', []):
+        part_id = part['partId']
+        all_part_ids.append(part_id)
+        with open(path.join(attachments_path, message_id, 'part{}.body'.format(part_id)), 'wb') as f:
+            body = part.get('body', {})
+            if 'attachmentId' in body:
+                with temp_loglevel():
+                    attachment = service.users().messages().attachments().get(userId='me', messageId=message_id, id=body['attachmentId']).execute()
+                data = attachment['data']
+            else:
+                data = body.pop('data', '')
+            f.write(urlsafe_b64decode(data))
+        with open(path.join(attachments_path, message_id, 'part{}.json'.format(part_id)), 'w') as f:
+            json.dump(part, f, indent=2)
+        process_parts(part, all_part_ids, attachments_path, message_id, service)
+
 def get_messages(source_stats, allowed_senders):
     stats = defaultdict(int)
     config = ckanext_helpers.get_plugin_configuration('upload_via_email')
@@ -63,21 +81,7 @@ def get_messages(source_stats, allowed_senders):
         if organization_id:
             makedirs(path.join(attachments_path, message_id), exist_ok=True)
             part_ids = []
-            for part in message.get('payload', {}).get('parts', []):
-                part_id = part['partId']
-                part_ids.append(part_id)
-                with open(path.join(attachments_path, message_id, 'part{}.body'.format(part_id)), 'wb') as f:
-                    body = part.get('body', {})
-                    if 'attachmentId' in body:
-                        with temp_loglevel():
-                            attachment = service.users().messages().attachments().get(userId='me', messageId=message_id,
-                                                                                      id=body['attachmentId']).execute()
-                        data = attachment['data']
-                    else:
-                        data = body.pop('data', '')
-                    f.write(urlsafe_b64decode(data))
-                with open(path.join(attachments_path, message_id, 'part{}.json'.format(part_id)), 'w') as f:
-                    json.dump(part, f, indent=2)
+            process_parts(message.get('payload', {}), part_ids, attachments_path, message_id, service)
             yield {'id': message_id,
                    'snippet': message.get('snippet', ''),
                    'from': headers.get('From', ''),
@@ -120,6 +124,22 @@ def flow(parameters, datapackage, resources, source_stats):
 
         yield get_messages(source_stats, allowed_senders)
 
+    load_args = parameters.get("load_args")
+    if not load_args:
+        load_args = [(datapackage, resources)]
     return Flow(add_metadata(name='_'),
-                load((datapackage, resources)),
+                load(*load_args),
                 download_messages)
+
+
+if __name__ == "__main__" and "--debug" in sys.argv:
+    config = ckanext_helpers.get_plugin_configuration('upload_via_email')
+    print("data_path=%s" % config["data_path"])
+    stats = {}
+    Flow(
+        flow({
+            "load_args": ["data/ckan_allowed_senders/datapackage.json"]
+        }, None, None, stats),
+        dump_to_path("data/downloaded_messages"),
+    ).process()
+    print(stats)

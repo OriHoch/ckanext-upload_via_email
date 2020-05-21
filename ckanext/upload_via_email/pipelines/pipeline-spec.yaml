@@ -7,6 +7,9 @@ upload_via_email:
       ckan-host: env:CKAN_URL
       ckan-api-key: env:CKAN_API_KEY
   - run: stream_remote_resources
+#  - run: dump.to_path
+#    parameters:
+#      out-path: data/ckan_allowed_senders
   - flow: download_messages
   - flow: get_datasets_package
   - run: ckan.dump.to_ckan
