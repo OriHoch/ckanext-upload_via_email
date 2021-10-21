@@ -14,9 +14,12 @@ import sys
 
 def get_allowed_senders(resource):
     for row in resource:
-        yield {'from_address': row['from_address'].lower().strip(),
-               'to_address': row['to_address'].lower().strip(),
-               'organization_id': row['organization_id'].strip()}
+        try:
+            yield {'from_address': row['from_address'].lower().strip(),
+                   'to_address': row['to_address'].lower().strip(),
+                   'organization_id': row['organization_id'].strip()}
+        except:
+            print("Failed to parse allowed_senders row: {}".format(row))
 
 
 def is_email_match(a, b):
